@@ -21,7 +21,9 @@ mkdir -p build
 cd build
 
 # Server-only configuration with SQLite only
+# El nombre del ejecutable se define aquí con -DPROJECT_NAME
 cmake .. -G Ninja \
+  -DPROJECT_NAME="luantiserver" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=/usr \
   -DBUILD_SERVER=ON \
@@ -39,14 +41,16 @@ ninja
 mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
-# CORRECCIÓN: Copiar desde la ubicación absoluta correcta
-cp ../../bin/luantiserver pkg/usr/bin/
+# CORRECCIÓN 1: La ruta correcta al binario es ../bin/
+cp ../bin/luantiserver pkg/usr/bin/
+
+# Crear enlace simbólico
 cd pkg/usr/bin
 ln -s luantiserver minetestserver
 cd ../../../..
 
 # Create control file
-cat > pkg/DEBIAN/control <<EOF
+cat > minetest/build/pkg/DEBIAN/control <<EOF
 Package: minetest-server
 Version: 5.12.0-1
 Section: games
@@ -56,14 +60,15 @@ Depends: libc6, libstdc++6, libsqlite3-0, libzstd1, libcurl4, libncurses6, libgm
 Maintainer: Minetest Team <minetest@example.com>
 Description: Minetest game server with terminal support
  Minetest is an open source voxel game engine. This package provides
- the server component with terminal administration interface.
+ the server component with a terminal administration interface.
 Homepage: https://www.minetest.net
 EOF
 
 # Build DEB package
+cd minetest/build
 dpkg-deb --build pkg
 mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
 
-# Mover el archivo DEB a la raíz del repositorio
-cp minetest-server_5.12.0_bookworm_amd64.deb ../../../
+# CORRECCIÓN 2: Mover el archivo DEB a la raíz del repositorio
+mv minetest-server_5.12.0_bookworm_amd64.deb ../../
 cd ../..
