@@ -1,64 +1,44 @@
-#!/bin/bash -e
+name: Build Minetest Server 5.12 DEB
 
-# Clone Minetest 5.12
-if [ ! -d "minetest" ]; then
-  git clone --depth 1 --branch 5.12.0 https://github.com/minetest/minetest.git
-fi
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-# Clone LuaJIT
-if [ ! -d "luajit" ]; then
-  git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git
-fi
+jobs:
+  build-minetest-server:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm
+      env:
+        LANG: C.UTF-8
+        DEBIAN_FRONTEND: noninteractive
 
-# Compile LuaJIT
-pushd luajit
-make -j$(nproc) amalg
-popd
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-# Build Minetest Server
-pushd minetest
-mkdir -p build
-cd build
+    - name: Install build dependencies
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          build-essential cmake ninja-build git \
+          libsqlite3-dev libzstd-dev libcurl4-dev \
+          libncurses-dev libgmp-dev libleveldb-dev \
+          libjsoncpp-dev libssl-dev zlib1g-dev \
+          ca-certificates wget binutils dpkg-dev \
+          gettext pkg-config
+        
+        # Clean up
+        apt-get clean
+        rm -rf /var/lib/apt/lists/*
 
-# Server-only configuration
-cmake .. -G Ninja \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DCMAKE_INSTALL_PREFIX=/usr \
-  -DBUILD_SERVER=ON \
-  -DBUILD_CLIENT=OFF \
-  -DENABLE_CURSES=ON \
-  -DBUILD_UNITTESTS=OFF \
-  -DENABLE_SYSTEM_JSONCPP=OFF \
-  -DLUA_INCLUDE_DIR=../../luajit/src \
-  -DLUA_LIBRARY=../../luajit/src/libluajit.a
+    - name: Build Minetest Server
+      run: chmod +x build.sh && ./build.sh
 
-ninja
-
-# Prepare DEB package
-mkdir -p pkg/usr/bin
-mkdir -p pkg/usr/share/minetest
-mkdir -p pkg/DEBIAN
-
-# Install server binary
-cp bin/minetestserver pkg/usr/bin/minetestserver
-
-# Create control file
-cat > pkg/DEBIAN/control <<EOF
-Package: minetest-server
-Version: 5.12.0-1
-Section: games
-Priority: optional
-Architecture: amd64
-Depends: libc6, libstdc++6, libsqlite3-0, libzstd1, libcurl4, libncurses6, libgmp10, libleveldb1d, libjsoncpp25, zlib1g
-Maintainer: Minetest Team <minetest@example.com>
-Description: Minetest game server with terminal support
- Minetest is an open source voxel game engine. This package provides
- the server component with terminal administration interface.
-Homepage: https://www.minetest.net
-EOF
-
-# Build DEB package
-dpkg-deb --build pkg
-mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
-
-popd
+    - name: Upload Minetest Server DEB
+      uses: actions/upload-artifact@v4
+      with:
+        name: minetest-server-deb
+        path: minetest/build/minetest-server_5.12.0_bookworm_amd64.deb
