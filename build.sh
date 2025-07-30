@@ -21,7 +21,6 @@ mkdir -p build
 cd build
 
 # Server-only configuration with SQLite only
-# El nombre del ejecutable se define aquí con -DPROJECT_NAME
 cmake .. -G Ninja \
   -DPROJECT_NAME="luantiserver" \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -37,20 +36,21 @@ cmake .. -G Ninja \
 
 ninja
 
-# Prepare DEB package
+# --- SECCIÓN DE EMPAQUETADO CORREGIDA ---
+
+# Preparar la estructura de directorios para el paquete.
+# El directorio actual sigue siendo 'minetest/build'.
 mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
-# CORRECCIÓN 1: La ruta correcta al binario es ../bin/
+# Copiar el ejecutable compilado.
 cp ../bin/luantiserver pkg/usr/bin/
 
-# Crear enlace simbólico
-cd pkg/usr/bin
-ln -s luantiserver minetestserver
-cd ../../../..
+# Crear el enlace simbólico sin cambiar de directorio.
+ln -s luantiserver pkg/usr/bin/minetestserver
 
-# Create control file
-cat > minetest/build/pkg/DEBIAN/control <<EOF
+# Crear el archivo de control en la ubicación correcta.
+cat > pkg/DEBIAN/control <<EOF
 Package: minetest-server
 Version: 5.12.0-1
 Section: games
@@ -64,11 +64,9 @@ Description: Minetest game server with terminal support
 Homepage: https://www.minetest.net
 EOF
 
-# Build DEB package
-cd minetest/build
+# Construir el paquete DEB desde el directorio 'minetest/build'.
 dpkg-deb --build pkg
-mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
+mv pkg.deb ../../minetest-server_5.12.0_bookworm_amd64.deb
 
-# CORRECCIÓN 2: Mover el archivo DEB a la raíz del repositorio
-mv minetest-server_5.12.0_bookworm_amd64.deb ../../
+# Regresar a la raíz del repositorio.
 cd ../..
