@@ -39,8 +39,8 @@ ninja
 mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
-# CORRECCIÓN: Copiar el binario real (luantiserver) y crear el enlace manualmente
-cp bin/luantiserver pkg/usr/bin/
+# CORRECCIÓN: Copiar desde la ubicación absoluta correcta
+cp ../../bin/luantiserver pkg/usr/bin/
 cd pkg/usr/bin
 ln -s luantiserver minetestserver
 cd ../../../..
