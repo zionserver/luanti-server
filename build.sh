@@ -20,7 +20,7 @@ pushd minetest
 mkdir -p build
 cd build
 
-# Server-only configuration
+# Server-only configuration with SQLite only
 cmake .. -G Ninja \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DCMAKE_INSTALL_PREFIX=/usr \
@@ -29,6 +29,7 @@ cmake .. -G Ninja \
   -DENABLE_CURSES=ON \
   -DBUILD_UNITTESTS=OFF \
   -DENABLE_SYSTEM_JSONCPP=OFF \
+  -DENABLE_LEVELDB=OFF \  # Desactivar LevelDB
   -DLUA_INCLUDE_DIR=../../luajit/src \
   -DLUA_LIBRARY=../../luajit/src/libluajit.a
 
@@ -36,7 +37,6 @@ ninja
 
 # Prepare DEB package
 mkdir -p pkg/usr/bin
-mkdir -p pkg/usr/share/minetest
 mkdir -p pkg/DEBIAN
 
 # Install server binary
@@ -49,7 +49,7 @@ Version: 5.12.0-1
 Section: games
 Priority: optional
 Architecture: amd64
-Depends: libc6, libstdc++6, libsqlite3-0, libzstd1, libcurl4, libncurses6, libgmp10, libleveldb1d, libjsoncpp25, zlib1g
+Depends: libc6, libstdc++6, libsqlite3-0, libzstd1, libcurl4, libncurses6, libgmp10, libjsoncpp25, zlib1g
 Maintainer: Minetest Team <minetest@example.com>
 Description: Minetest game server with terminal support
  Minetest is an open source voxel game engine. This package provides
