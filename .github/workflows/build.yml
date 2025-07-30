@@ -1,53 +1,64 @@
-name: build
+#!/bin/bash -e
 
-on: [push, pull_request]
+# Clone Minetest 5.12
+if [ ! -d "minetest" ]; then
+  git clone --depth 1 --branch 5.12.0 https://github.com/minetest/minetest.git
+fi
 
-jobs:
-  linux-server-build:
-    runs-on: ubuntu-latest
-    container:
-      image: debian:bullseye
-      env: { LANG: "C.UTF-8" }
-    steps:
-      - uses: actions/checkout@v4
+# Clone LuaJIT
+if [ ! -d "luajit" ]; then
+  git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git
+fi
 
-      - name: Instalar dependencias
-        run: |
-          apt-get update
-          apt-get install -y \
-            g++ make ninja-build libc6-dev cmake \
-            libsqlite3-dev \
-            libcurl4-openssl-dev \
-            zlib1g-dev libgmp-dev libzstd-dev \  # Asegurar zstd-dev
-            libleveldb-dev gettext \
-            ca-certificates wget file libncurses-dev \
-            binutils dpkg-dev libssl-dev \  # Agregar OpenSSL
-            # Dependencias adicionales
-            libjsoncpp-dev libz-dev libbz2-dev
+# Compile LuaJIT
+pushd luajit
+make -j$(nproc) amalg
+popd
 
-          wget https://github.com/principia-game/linux-deps/releases/download/latest/deps.tar.gz -O linux-deps.tar.gz
-          tar -xaf linux-deps.tar.gz -C /
+# Build Minetest Server
+pushd minetest
+mkdir -p build
+cd build
 
-      - name: Clonar repositorio Luanti
-        uses: actions/checkout@v4
-        with:
-          repository: minetest/minetest
-          path: luanti
-          ref: 5.12.0
+# Server-only configuration
+cmake .. -G Ninja \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_INSTALL_PREFIX=/usr \
+  -DBUILD_SERVER=ON \
+  -DBUILD_CLIENT=OFF \
+  -DENABLE_CURSES=ON \
+  -DBUILD_UNITTESTS=OFF \
+  -DENABLE_SYSTEM_JSONCPP=OFF \
+  -DLUA_INCLUDE_DIR=../../luajit/src \
+  -DLUA_LIBRARY=../../luajit/src/libluajit.a
 
-      - name: Clonar repositorio LuaJIT
-        uses: actions/checkout@v4
-        with:
-          repository: LuaJIT/LuaJIT
-          path: luajit
+ninja
 
-      - name: Compilar y empaquetar
-        run: chmod +x build.sh && ./build.sh
+# Prepare DEB package
+mkdir -p pkg/usr/bin
+mkdir -p pkg/usr/share/minetest
+mkdir -p pkg/DEBIAN
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: server-package
-          path: |
-            luanti/build/luanti-server_*.deb
-            luanti/build/luanti-server.debug
-          if-no-files-found: error
+# Install server binary
+cp bin/minetestserver pkg/usr/bin/minetestserver
+
+# Create control file
+cat > pkg/DEBIAN/control <<EOF
+Package: minetest-server
+Version: 5.12.0-1
+Section: games
+Priority: optional
+Architecture: amd64
+Depends: libc6, libstdc++6, libsqlite3-0, libzstd1, libcurl4, libncurses6, libgmp10, libleveldb1d, libjsoncpp25, zlib1g
+Maintainer: Minetest Team <minetest@example.com>
+Description: Minetest game server with terminal support
+ Minetest is an open source voxel game engine. This package provides
+ the server component with terminal administration interface.
+Homepage: https://www.minetest.net
+EOF
+
+# Build DEB package
+dpkg-deb --build pkg
+mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
+
+popd
