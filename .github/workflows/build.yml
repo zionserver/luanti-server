@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  build-and-upload:
+  build-and-release:
     runs-on: ubuntu-latest
     container:
       image: debian:bookworm
@@ -33,11 +33,25 @@ jobs:
     - name: Build server
       run: chmod +x build.sh && ./build.sh
 
-    - name: Upload to Releases
-      uses: ncipollo/release-action@v1
+    - name: Setup Release
+      id: create_release
+      uses: actions/create-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        artifacts: "minetest/build/minetest-server_5.12.0_bookworm_amd64.deb"
-        token: ${{ secrets.GITHUB_TOKEN }}
-        tag: latest-build
-        name: "Latest Minetest Server Build"
-        replaceExisting: true
+        tag_name: latest-build
+        release_name: Latest Minetest Server Build
+        draft: false
+        prerelease: true
+        body: "Continuous build from main branch"
+        overwrite: true
+
+    - name: Upload Package
+      uses: actions/upload-release-asset@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: minetest/build/minetest-server_5.12.0_bookworm_amd64.deb
+        asset_name: minetest-server.deb
+        asset_content_type: application/vnd.debian.binary-package
