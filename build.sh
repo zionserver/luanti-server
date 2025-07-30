@@ -5,18 +5,18 @@ if [ ! -d "minetest" ]; then
   git clone --depth 1 --branch 5.12.0 https://github.com/minetest/minetest.git
 fi
 
-# Clone LuaJIT
+# Clone LuaJIT con nombre de directorio en minúsculas
 if [ ! -d "luajit" ]; then
-  git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git
+  git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git luajit
 fi
 
 # Compile LuaJIT
-pushd luajit
+cd luajit
 make -j$(nproc) amalg
-popd
+cd ..
 
 # Build Minetest Server
-pushd minetest
+cd minetest
 mkdir -p build
 cd build
 
@@ -29,7 +29,7 @@ cmake .. -G Ninja \
   -DENABLE_CURSES=ON \
   -DBUILD_UNITTESTS=OFF \
   -DENABLE_SYSTEM_JSONCPP=OFF \
-  -DENABLE_LEVELDB=OFF \  # Desactivar LevelDB
+  -DENABLE_LEVELDB=OFF \
   -DLUA_INCLUDE_DIR=../../luajit/src \
   -DLUA_LIBRARY=../../luajit/src/libluajit.a
 
@@ -61,4 +61,4 @@ EOF
 dpkg-deb --build pkg
 mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
 
-popd
+cd ../..
