@@ -1,13 +1,11 @@
-name: Build Minetest Server 5.12 DEB
+name: Continuous Minetest Server Release
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  build-minetest-server:
+  build-and-release:
     runs-on: ubuntu-latest
     container:
       image: debian:bookworm
@@ -30,15 +28,32 @@ jobs:
           ca-certificates wget binutils dpkg-dev \
           gettext pkg-config
         
-        # Clean up
         apt-get clean
         rm -rf /var/lib/apt/lists/*
 
     - name: Build Minetest Server
       run: chmod +x build.sh && ./build.sh
 
-    - name: Upload Minetest Server DEB
-      uses: actions/upload-artifact@v4
+    - name: Get commit details
+      id: commit
+      run: |
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        echo "sha_short=$SHORT_SHA" >> $GITHUB_OUTPUT
+        echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+    - name: Rename package
+      run: |
+        cd minetest/build
+        mv minetest-server_5.12.0_bookworm_amd64.deb "minetest-server_${{ steps.commit.outputs.date }}_${{ steps.commit.outputs.sha_short }}_bookworm_amd64.deb"
+
+    - name: Create Continuous Release
+      uses: softprops/action-gh-release@v1
       with:
-        name: minetest-server-deb
-        path: minetest/build/minetest-server_5.12.0_bookworm_amd64.deb
+        name: "Minetest Server Continuous Build"
+        tag_name: "continuous"
+        body: "Latest server build from main branch"
+        prerelease: true
+        files: |
+          minetest/build/minetest-server_*.deb
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
