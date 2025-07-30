@@ -18,11 +18,13 @@ jobs:
             g++ make ninja-build libc6-dev cmake \
             libsqlite3-dev \
             libcurl4-openssl-dev \
-            zlib1g-dev libgmp-dev \
+            zlib1g-dev libgmp-dev libzstd-dev \  # Asegurar zstd-dev
             libleveldb-dev gettext \
             ca-certificates wget file libncurses-dev \
-            binutils dpkg-dev  # Nuevas dependencias para empaquetado .deb
-          
+            binutils dpkg-dev libssl-dev \  # Agregar OpenSSL
+            # Dependencias adicionales
+            libjsoncpp-dev libz-dev libbz2-dev
+
           wget https://github.com/principia-game/linux-deps/releases/download/latest/deps.tar.gz -O linux-deps.tar.gz
           tar -xaf linux-deps.tar.gz -C /
 
