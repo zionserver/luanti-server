@@ -39,8 +39,8 @@ ninja
 mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
-# CORRECCIÓN: Usar el nombre correcto del binario
-cp bin/luantiserver pkg/usr/bin/minetestserver
+# CORRECCIÓN: Copiar desde la ubicación correcta
+cp ../bin/luantiserver pkg/usr/bin/minetestserver
 
 # Create control file
 cat > pkg/DEBIAN/control <<EOF
