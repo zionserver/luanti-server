@@ -33,13 +33,17 @@ jobs:
     - name: Build server
       run: chmod +x build.sh && ./build.sh
 
+    # FIX: Subir el artefacto generado
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: minetest-server
+        path: minetest-server_5.12.0_bookworm_amd64.deb
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
@@ -102,9 +106,10 @@ minetestserver --help
         </html>
         EOF
 
-    - name: Upload artifact
+    - name: Rename to latest
       run: |
-        cp dist/minetest-server_5.12.0_bookworm_amd64.deb dist/minetest-server-latest.deb
+        cd dist
+        cp minetest-server_5.12.0_bookworm_amd64.deb minetest-server-latest.deb
 
     - name: Upload to Pages
       uses: actions/upload-pages-artifact@v3
