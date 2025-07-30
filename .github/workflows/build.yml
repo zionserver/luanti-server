@@ -1,11 +1,11 @@
-name: Simple Minetest Server Build
+name: Build and Deploy Minetest Server
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build-and-release:
+  build:
     runs-on: ubuntu-latest
     container:
       image: debian:bookworm
@@ -33,14 +33,94 @@ jobs:
     - name: Build server
       run: chmod +x build.sh && ./build.sh
 
-    - name: Upload to Releases
-      uses: softprops/action-gh-release@v1
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download artifact
+      uses: actions/download-artifact@v4
       with:
-        files: minetest/build/minetest-server_5.12.0_bookworm_amd64.deb
-        tag_name: latest-build
-        name: Latest Minetest Server Build
-        body: Continuous build from main branch
-        prerelease: true
-        overwrite: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: minetest-server
+        path: dist
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Create index.html
+      run: |
+        cat > dist/index.html <<EOF
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Luanti Server Download</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                h1 { color: #333; }
+                .box { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+                pre { background: #eee; padding: 15px; overflow-x: auto; }
+            </style>
+        </head>
+        <body>
+            <h1>Luanti Server - Minetest con soporte de terminal</h1>
+            
+            <div class="box">
+                <p><a href="minetest-server-latest.deb" download>⬇️ Descargar última versión</a></p>
+            </div>
+            
+            <h2>Instalación en Debian Bookworm:</h2>
+            <pre>
+# 1. Descargar el servidor
+wget https://zionserver.github.io/luanti-server/minetest-server-latest.deb
+
+# 2. Instalar dependencias
+sudo apt update
+sudo apt install libsqlite3-0 libzstd1 libcurl4 libncurses6 libgmp10 libjsoncpp25 zlib1g
+
+# 3. Instalar el servidor
+sudo dpkg -i minetest-server-latest.deb
+
+# 4. Ejecutar
+minetestserver --terminal
+            </pre>
+            
+            <h2>Comandos útiles</h2>
+            <pre>
+# Crear nuevo mundo
+minetestserver --terminal --worldname mi-mundo
+
+# Ejecutar en puerto específico
+minetestserver --terminal --port 30000
+
+# Ver todos los parámetros
+minetestserver --help
+            </pre>
+        </body>
+        </html>
+        EOF
+
+    - name: Upload artifact
+      run: |
+        cp dist/minetest-server_5.12.0_bookworm_amd64.deb dist/minetest-server-latest.deb
+
+    - name: Upload to Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: dist
+
+  pages-build-deployment:
+    needs: deploy
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
