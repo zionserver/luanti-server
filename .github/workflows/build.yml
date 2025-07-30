@@ -1,4 +1,4 @@
-name: Build and Deploy Minetest Server
+name: Build and Deploy Luanti Server
 
 on:
   push:
@@ -21,26 +21,33 @@ jobs:
       run: |
         apt-get update
         apt-get install -y --no-install-recommends \
-          build-essential cmake ninja-build git \
-          libsqlite3-dev libzstd-dev libcurl4-openssl-dev \
-          libncurses-dev libgmp-dev \
-          libjsoncpp-dev libssl-dev zlib1g-dev \
-          ca-certificates wget binutils dpkg-dev \
-          gettext pkg-config
+          g++ make libc6-dev cmake libpng-dev libjpeg-dev \
+          libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev \
+          libopenal-dev libcurl4-gnutls-dev libfreetype6-dev zlib1g-dev \
+          libgmp-dev libjsoncpp-dev libzstd-dev libluajit-5.1-dev \
+          gettext libsdl2-dev git ca-certificates wget binutils dpkg-dev \
+          ninja-build pkg-config
         apt-get clean
         rm -rf /var/lib/apt/lists/*
 
     - name: Build server
-      run: chmod +x build.sh && ./build.sh
+      run: |
+        git clone --depth 1 https://github.com/luanti-org/luanti
+        cd luanti
+        cmake . -DRUN_IN_PLACE=FALSE -DBUILD_SERVER=TRUE -DBUILD_CLIENT=FALSE -DCMAKE_BUILD_TYPE=Release
+        make -j$(nproc)
+        cpack -G DEB
+        mv luanti-*.deb ../luanti-server.deb
+        cd ..
 
     - name: Verify DEB file exists
-      run: ls -la minetest-server_*.deb
+      run: ls -la luanti-server.deb
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: minetest-server
-        path: minetest-server_*.deb
+        name: luanti-server
+        path: luanti-server.deb
 
   deploy:
     needs: build
@@ -49,14 +56,14 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: minetest-server
+        name: luanti-server
         path: dist
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
 
     - name: Rename to latest
-      run: cp dist/minetest-server_*.deb dist/minetest-server-latest.deb
+      run: mv dist/luanti-server.deb dist/luanti-server-latest.deb
 
     - name: Upload to Pages
       uses: actions/upload-pages-artifact@v3
@@ -66,7 +73,7 @@ jobs:
   pages-build-deployment:
     needs: deploy
     permissions:
-      pages: write
+      pages: write  # Fixed permissions
       id-token: write
     environment:
       name: github-pages
