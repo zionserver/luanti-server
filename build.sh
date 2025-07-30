@@ -40,7 +40,7 @@ mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
 # CORRECCIÓN: Copiar desde la ubicación correcta
-cp ../bin/luantiserver pkg/usr/bin/minetestserver
+cp bin/minetestserver pkg/usr/bin/minetestserver
 
 # Create control file
 cat > pkg/DEBIAN/control <<EOF
@@ -61,4 +61,6 @@ EOF
 dpkg-deb --build pkg
 mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
 
+# Mover el archivo DEB a la raíz del repositorio para que GitHub Actions lo encuentre
+cp minetest-server_5.12.0_bookworm_amd64.deb ../../../
 cd ../..
