@@ -24,7 +24,7 @@ jobs:
         apt-get update
         apt-get install -y --no-install-recommends \
           build-essential cmake ninja-build git \
-          libsqlite3-dev libzstd-dev libcurl4-dev \
+          libsqlite3-dev libzstd-dev libcurl4-openssl-dev \  # CORRECCIÓN AQUÍ
           libncurses-dev libgmp-dev libleveldb-dev \
           libjsoncpp-dev libssl-dev zlib1g-dev \
           ca-certificates wget binutils dpkg-dev \
