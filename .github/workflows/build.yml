@@ -33,25 +33,14 @@ jobs:
     - name: Build server
       run: chmod +x build.sh && ./build.sh
 
-    - name: Setup Release
-      id: create_release
-      uses: actions/create-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload to Releases
+      uses: softprops/action-gh-release@v1
       with:
+        files: minetest/build/minetest-server_5.12.0_bookworm_amd64.deb
         tag_name: latest-build
-        release_name: Latest Minetest Server Build
-        draft: false
+        name: Latest Minetest Server Build
+        body: Continuous build from main branch
         prerelease: true
-        body: "Continuous build from main branch"
         overwrite: true
-
-    - name: Upload Package
-      uses: actions/upload-release-asset@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: minetest/build/minetest-server_5.12.0_bookworm_amd64.deb
-        asset_name: minetest-server.deb
-        asset_content_type: application/vnd.debian.binary-package
