@@ -5,7 +5,7 @@ if [ ! -d "minetest" ]; then
   git clone --depth 1 --branch 5.12.0 https://github.com/minetest/minetest.git
 fi
 
-# Clone LuaJIT con nombre de directorio en minúsculas
+# Clone LuaJIT
 if [ ! -d "luajit" ]; then
   git clone --depth 1 --branch v2.1 https://github.com/LuaJIT/LuaJIT.git luajit
 fi
@@ -39,8 +39,8 @@ ninja
 mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
-# Install server binary
-cp bin/minetestserver pkg/usr/bin/minetestserver
+# CORRECCIÓN: Usar el nombre correcto del binario
+cp bin/luantiserver pkg/usr/bin/minetestserver
 
 # Create control file
 cat > pkg/DEBIAN/control <<EOF
