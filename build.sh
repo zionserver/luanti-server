@@ -39,8 +39,11 @@ ninja
 mkdir -p pkg/usr/bin
 mkdir -p pkg/DEBIAN
 
-# CORRECCIÓN: Copiar desde la ubicación correcta
-cp bin/minetestserver pkg/usr/bin/minetestserver
+# CORRECCIÓN: Copiar el binario real (luantiserver) y crear el enlace manualmente
+cp bin/luantiserver pkg/usr/bin/
+cd pkg/usr/bin
+ln -s luantiserver minetestserver
+cd ../../../..
 
 # Create control file
 cat > pkg/DEBIAN/control <<EOF
@@ -61,6 +64,6 @@ EOF
 dpkg-deb --build pkg
 mv pkg.deb minetest-server_5.12.0_bookworm_amd64.deb
 
-# Mover el archivo DEB a la raíz del repositorio para que GitHub Actions lo encuentre
+# Mover el archivo DEB a la raíz del repositorio
 cp minetest-server_5.12.0_bookworm_amd64.deb ../../../
 cd ../..
