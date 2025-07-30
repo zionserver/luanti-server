@@ -33,7 +33,6 @@ jobs:
     - name: Build server
       run: chmod +x build.sh && ./build.sh
 
-    # FIX: Subir el artefacto generado
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -116,12 +115,13 @@ minetestserver --help
       with:
         path: dist
 
+  # CORRECCIÓN PRINCIPAL: Indentación correcta de 'environment'
   pages-build-deployment:
     needs: deploy
     permissions:
       pages: write
       id-token: write
-    environment:
+    environment:  # <-- Esta línea debe estar al mismo nivel que 'permissions'
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
