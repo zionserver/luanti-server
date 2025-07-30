@@ -1,11 +1,11 @@
-name: Continuous Minetest Server Release
+name: Simple Minetest Server Build
 
 on:
   push:
     branches: [main]
 
 jobs:
-  build-and-release:
+  build-and-upload:
     runs-on: ubuntu-latest
     container:
       image: debian:bookworm
@@ -14,10 +14,10 @@ jobs:
         DEBIAN_FRONTEND: noninteractive
 
     steps:
-    - name: Checkout repository
+    - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Install build dependencies
+    - name: Install dependencies
       run: |
         apt-get update
         apt-get install -y --no-install-recommends \
@@ -27,33 +27,17 @@ jobs:
           libjsoncpp-dev libssl-dev zlib1g-dev \
           ca-certificates wget binutils dpkg-dev \
           gettext pkg-config
-        
         apt-get clean
         rm -rf /var/lib/apt/lists/*
 
-    - name: Build Minetest Server
+    - name: Build server
       run: chmod +x build.sh && ./build.sh
 
-    - name: Get commit details
-      id: commit
-      run: |
-        SHORT_SHA=$(git rev-parse --short HEAD)
-        echo "sha_short=$SHORT_SHA" >> $GITHUB_OUTPUT
-        echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-
-    - name: Rename package
-      run: |
-        cd minetest/build
-        mv minetest-server_5.12.0_bookworm_amd64.deb "minetest-server_${{ steps.commit.outputs.date }}_${{ steps.commit.outputs.sha_short }}_bookworm_amd64.deb"
-
-    - name: Create Continuous Release
-      uses: softprops/action-gh-release@v1
+    - name: Upload to Releases
+      uses: ncipollo/release-action@v1
       with:
-        name: "Minetest Server Continuous Build"
-        tag_name: "continuous"
-        body: "Latest server build from main branch"
-        prerelease: true
-        files: |
-          minetest/build/minetest-server_*.deb
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        artifacts: "minetest/build/minetest-server_5.12.0_bookworm_amd64.deb"
+        token: ${{ secrets.GITHUB_TOKEN }}
+        tag: latest-build
+        name: "Latest Minetest Server Build"
+        replaceExisting: true
