@@ -21,27 +21,38 @@ jobs:
       run: |
         apt-get update
         apt-get install -y --no-install-recommends \
-          g++ make libc6-dev cmake libpng-dev libjpeg-dev \
-          libgl1-mesa-dev libsqlite3-dev libogg-dev libvorbis-dev \
-          libopenal-dev libcurl4-gnutls-dev libfreetype6-dev zlib1g-dev \
-          libgmp-dev libjsoncpp-dev libzstd-dev libluajit-5.1-dev \
-          gettext libsdl2-dev git ca-certificates wget binutils dpkg-dev \
-          ninja-build pkg-config
+          build-essential cmake git \
+          libsqlite3-dev libzstd-dev libcurl4-gnutls-dev \
+          libncurses-dev libgmp-dev libjsoncpp-dev libssl-dev \
+          zlib1g-dev libluajit-5.1-dev gettext pkg-config \
+          ninja-build ca-certificates wget binutils dpkg-dev
         apt-get clean
         rm -rf /var/lib/apt/lists/*
 
     - name: Build server
       run: |
-        git clone --depth 1 https://github.com/luanti-org/luanti
+        git clone --depth 1 --branch stable-5 https://github.com/luanti-org/luanti
         cd luanti
-        cmake . -DRUN_IN_PLACE=FALSE -DBUILD_SERVER=TRUE -DBUILD_CLIENT=FALSE -DCMAKE_BUILD_TYPE=Release
+        cmake . \
+          -DRUN_IN_PLACE=FALSE \
+          -DBUILD_SERVER=TRUE \
+          -DBUILD_CLIENT=FALSE \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DENABLE_CURSES=ON \
+          -DENABLE_GETTEXT=ON \
+          -DENABLE_SOUND=OFF \
+          -DENABLE_GLES=OFF \
+          -DENABLE_FREETYPE=OFF \
+          -DENABLE_SYSTEM_JSONCPP=ON
         make -j$(nproc)
         cpack -G DEB
         mv luanti-*.deb ../luanti-server.deb
         cd ..
 
-    - name: Verify DEB file exists
-      run: ls -la luanti-server.deb
+    - name: Verify DEB file
+      run: |
+        ls -la luanti-server.deb
+        dpkg -c luanti-server.deb | grep bin/luanti
 
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
@@ -73,7 +84,7 @@ jobs:
   pages-build-deployment:
     needs: deploy
     permissions:
-      pages: write  # Fixed permissions
+      pages: write
       id-token: write
     environment:
       name: github-pages
