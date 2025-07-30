@@ -33,11 +33,9 @@ jobs:
     - name: Build server
       run: chmod +x build.sh && ./build.sh
 
-    # PASO CRÍTICO: Verificar que el archivo existe antes de subirlo
     - name: Verify DEB file exists
       run: ls -la minetest-server_*.deb
 
-    # PASO ACTUALIZADO: Subir el archivo usando patrón (más robusto)
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -57,12 +55,8 @@ jobs:
     - name: Setup Pages
       uses: actions/configure-pages@v4
 
-    # PASO MEJORADO: Renombrar usando patrón
     - name: Rename to latest
-      run: |
-        cd dist
-        cp minetest-server_*.deb minetest-server-latest.deb
-        ls -la  # Verificar los archivos
+      run: cp dist/minetest-server_*.deb dist/minetest-server-latest.deb
 
     - name: Upload to Pages
       uses: actions/upload-pages-artifact@v3
